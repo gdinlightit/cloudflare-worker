@@ -1,18 +1,25 @@
 {
-	"name": "new-project",
+	"name": "hw-integration",
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
 		"deploy": "wrangler deploy",
 		"dev": "wrangler dev",
-		"start": "wrangler dev",
 		"test": "vitest",
-		"cf-typegen": "wrangler types"
+		"cf-typegen": "wrangler types",
+		"fixer": "npx prettier --write ./{src,test}/**/*.ts",
+		"type-check": "npx tsc --noEmit",
+		"db:init": "wrangler d1 execute healthwarehouse_db --local --file=./src/database/schema.sql",
+		"db:check": "wrangler d1 execute healthwarehouse_db --local --command=\"SELECT sql FROM sqlite_master WHERE type='table'\"",
+		"db:reset": "wrangler delete healthwarehouse_db && pnpm run db:init"
 	},
 	"devDependencies": {
 		"@cloudflare/vitest-pool-workers": "^0.8.19",
 		"typescript": "^5.5.2",
 		"vitest": "~3.2.0",
 		"wrangler": "^4.38.0"
+	},
+	"dependencies": {
+		"zod": "^4.1.11"
 	}
 }
