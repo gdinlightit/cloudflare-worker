@@ -1,26 +1,52 @@
 /**
- * Welcome to Cloudflare Workers! This is your first worker.
+ * HealthWarehouse Integration Worker
  *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
- *
- * Bind resources to your worker in `wrangler.jsonc`. After adding bindings, a type definition for the
- * `Env` object can be regenerated with `npm run cf-typegen`.
- *
- * Learn more at https://developers.cloudflare.com/workers/
+ * This worker handles pharmacy orders integration with HealthWarehouse API
  */
+import { createOrderController } from './routes/create-order';
+import { addHeaders, CORS_HEADERS, HTTP_STATUS, jsonResponse } from './utils/response';
+
+export const ROUTES = {
+    ORDER: '/create-order',
+    HEALTH: '/health',
+} as const;
 
 export default {
-	async fetch(request, env, ctx): Promise<Response> {
-		const url = new URL(request.url);
-		switch (url.pathname) {
-			case '/message':
-				return new Response('Hello, World!');
-			case '/random':
-				return new Response(crypto.randomUUID());
-			default:
-				return new Response('Not Found', { status: 404 });
-		}
-	},
+    async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+        const url = new URL(request.url);
+
+        // CORS preflight
+        if (request.method === 'OPTIONS') {
+            return jsonResponse(null, HTTP_STATUS.NO_CONTENT);
+        }
+
+        try {
+            switch (url.pathname) {
+                case ROUTES.ORDER:
+                    if (request.method !== 'POST') {
+                        return jsonResponse({ error: 'Method not allowed' }, HTTP_STATUS.METHOD_NOT_ALLOWED);
+                    }
+
+                    return addHeaders(CORS_HEADERS, await createOrderController(request, env));
+
+                case ROUTES.HEALTH:
+                    return jsonResponse({
+                        status: 'healthy',
+                        timestamp: new Date().toISOString(),
+                    });
+
+                default:
+                    return jsonResponse({ error: 'Not Found' }, HTTP_STATUS.NOT_FOUND);
+            }
+        } catch (error) {
+            console.error('Worker error:', error);
+            return jsonResponse(
+                {
+                    error: 'Internal Server Error',
+                    message: error instanceof Error ? error.message : 'Unknown error',
+                },
+                HTTP_STATUS.INTERNAL_SERVER_ERROR
+            );
+        }
+    },
 } satisfies ExportedHandler<Env>;
