@@ -1,5 +1,6 @@
 {
 	"files.associations": {
 		"wrangler.json": "jsonc"
-	}
+	},
+	"cSpell.words": ["AUTOINCREMENT", "healthwarehouse", "intakeq", "Lisinopril", "MERCHANTABLITY", "miniflare", "nextday"]
 }
